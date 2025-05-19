@@ -70,7 +70,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#relational-schema-inference-basics" class="md-skip">
+        <a href="#relational-schema-inference" class="md-skip">
           Skip to content
         </a>
       
@@ -386,9 +386,9 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#relational-schema-inference-basics" class="md-nav__link">
+  <a href="#relational-schema-inference" class="md-nav__link">
     <span class="md-ellipsis">
-      Relational schema inference basics
+      Relational schema inference
     </span>
   </a>
   
@@ -415,7 +415,7 @@
         <li class="md-nav__item">
   <a href="#node-level-operations-customization-basic" class="md-nav__link">
     <span class="md-ellipsis">
-      Node-level operations customization basic
+      Node-level operations customization (basic)
     </span>
   </a>
   
@@ -424,9 +424,33 @@
         <li class="md-nav__item">
   <a href="#node-level-operations-customization-advanced" class="md-nav__link">
     <span class="md-ellipsis">
-      Node-level operations customization advanced
+      Node-level operations customization (advanced)
     </span>
   </a>
+  
+    <nav class="md-nav" aria-label="Node-level operations customization (advanced)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#post-join-annotation" class="md-nav__link">
+    <span class="md-ellipsis">
+      post-join annotation
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-join-filters" class="md-nav__link">
+    <span class="md-ellipsis">
+      post-join filters
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -459,7 +483,7 @@
 
   <h1>Examples</h1>
 
-<h2 id="relational-schema-inference-basics">Relational schema inference basics</h2>
+<h2 id="relational-schema-inference">Relational schema inference</h2>
 <p>This tutorial covers the basic features of extracting relational metadata
 from flat files.</p>
 <ol>
@@ -517,7 +541,7 @@ sample schema around the <code>cust.csv</code>.  To do this we'll assign the <co
 </ol>
 </li>
 </ol>
-<h2 id="node-level-operations-customization-basic">Node-level operations customization basic</h2>
+<h2 id="node-level-operations-customization-basic">Node-level operations customization (basic)</h2>
 <p>In the compute graph created in the above example we leaned into Kurve's automation, but let's
 customize some things and see the effect.</p>
 <ol>
@@ -541,16 +565,32 @@ customize some things and see the effect.</p>
 </li>
 </ol>
 <p>In summary, we annotated the <code>cust.csv</code> node with a new column called <code>name_length</code> and then filtered the dataset to only contain rows where <code>name_length &lt; 4</code>, which filtered one row.  This highlights how we can customize compute graphs in a basic way.  The next example will do this in a more advanced way.</p>
-<h2 id="node-level-operations-customization-advanced">Node-level operations customization advanced</h2>
-<p>Continuing with the same schema and compute graph from the prior 2 examples let's say we need to customize some of the aggregations on the <code>orders.csv</code> table and perform some filters on that table, as well.</p>
+<h2 id="node-level-operations-customization-advanced">Node-level operations customization (advanced)</h2>
+<p>Continuing with the same schema and compute graph from the prior examples.</p>
+<h3 id="post-join-annotation">post-join annotation</h3>
+<p>We need to compute the difference between the <code>notifications.csv</code> and the <code>orders.csv</code> timestamps, which will require
+they both be joined to the <code>cust.csv</code> and then a <code>DATEDIFF</code> operation needs to be called between the dates.  The order
+of operations is as follows:</p>
 <ol>
-<li>Visit the compute graph from the prior example</li>
-<li>Click on the <code>orders.csv</code> node</li>
-<li>
-<p>Click <b>Edit Node</b> and under <b>Filters</b> enter the following:</p>
-<p><code>where total &lt; 2000</code></p>
-</li>
+<li>Join <code>orders.csv</code> to <code>cust.csv</code> without aggregating</li>
+<li>Join <code>notifications.csv</code> to <code>cust.csv</code> without aggregating</li>
+<li>Compute date difference between <code>orders.csv</code> timestamp and <code>notifications.csv</code> timestamp</li>
 </ol>
+<p>To accomplish this in Kurve we just need to specify a post-join annotation definition on the <code>cust.csv</code> as follows:
+<img alt="ex4s1" src="../images/ex4_step1.jpg" /></p>
+<p>Notice the highlighted portion of the screenshot which shows the nodes that the <code>post-join annotate</code> operation depends on.  This tells Kurve that to apply the defined operation under post-join annotate we need bboth the <code>orders.csv</code> and <code>notifictions.csv</code> merged first.  The SQL we're running is:</p>
+<pre><code class="language-sql">select *,
+DATEDIFF('DAY', ord_ts, not_ts) as order_notification_timediff
+</code></pre>
+<p>Additionally, we need to update both edges to <i>not</i> be aggregated prior to join:
+<img alt="ex4s2" src="../images/ex4_step2.jpg" /></p>
+<p>Finally, we can execute the compute graph.  Once it is executed notice the newly added column in the dataset.  Also notice that we don't have just 4 rows anymore since we did not aggregate the child relationships!</p>
+<p><img alt="ex4s3" src="../images/ex4_step3.jpg" /></p>
+<h3 id="post-join-filters">post-join filters</h3>
+<p>In post-join annotation we created a new column that depended on 2 foreign relationships.  We'll define a filter which depends on the same 2 relationships and applies to the column created by post-join annotate.
+<img alt="ex4s4" src="../images/ex4_step4.jpg" /></p>
+<p>Now re-execute the compute graph and view the output.  There shouldn't be any negatives for <code>order_notification_timediff</code>:
+<img alt="ex4s5" src="../images/ex4_step5.jpg" /></p>
 
 
 
@@ -571,7 +611,7 @@ customize some things and see the effect.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 18, 2025 18:29:00">May 18, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="May 19, 2025 01:41:00">May 19, 2025</span>
   </span>
 
     
@@ -620,7 +660,7 @@ customize some things and see the effect.</p>
     
     
       
-      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections", "content.code.copy", "toc.integrate"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"base": "..", "features": ["navigation.tabs", "navigation.sections", "content.code.copy", "toc.integrate", "navigation.expand"], "search": "../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.13a4f30d.min.js"></script>
