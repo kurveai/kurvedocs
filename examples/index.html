@@ -276,6 +276,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorials/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -556,6 +575,28 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -647,11 +688,13 @@ customize some things and see the effect.</p>
 </li>
 <li>
 <p>Click <b>Edit Node</b> and under <b>Annotations / special selects</b> enter the following:</p>
-<p><code>select *, length(name) as name_length</code></p>
+<div class="highlight"><pre><span></span><code>select *, length(name) as name_length
+</code></pre></div>
 </li>
 <li>
 <p>Under <b>Filters</b> enter the following:</p>
-<p><code>where name_length &lt; 4</code>
+<p><div class="highlight"><pre><span></span><code>where name_length &lt; 4
+</code></pre></div>
 <img alt="ex3s1" src="../images/ex3_step1.jpg" />
 5. Execute the compute graph
 6. Navigate home and click on the compute graph output table under <b>My data sources</b> and you shuld now see only 3 rows.
@@ -672,10 +715,10 @@ of operations is as follows:</p>
 </ol>
 <p>To accomplish this in Kurve we just need to specify a post-join annotation definition on the <code>cust.csv</code> as follows:
 <img alt="ex4s1" src="../images/ex4_step1.jpg" /></p>
-<p>Notice the highlighted portion of the screenshot which shows the nodes that the <code>post-join annotate</code> operation depends on.  This tells Kurve that to apply the defined operation under post-join annotate we need bboth the <code>orders.csv</code> and <code>notifictions.csv</code> merged first.  The SQL we're running is:</p>
-<pre><code class="language-sql">select *,
-DATEDIFF('DAY', ord_ts, not_ts) as order_notification_timediff
-</code></pre>
+<p>Notice the highlighted portion of the screenshot which shows the nodes that the <code>post-join annotate</code> operation depends on.  This tells Kurve that to apply the defined operation under post-join annotate we need bboth the <code>orders.csv</code> and <code>notifictions.csv</code> merged first.  The SQL we're running is:
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="n">DATEDIFF</span><span class="p">(</span><span class="s1">&#39;DAY&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">ord_ts</span><span class="p">,</span><span class="w"> </span><span class="n">not_ts</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">order_notification_timediff</span>
+</code></pre></div></p>
 <p>Additionally, we need to update both edges to <i>not</i> be aggregated prior to join:
 <img alt="ex4s2" src="../images/ex4_step2.jpg" /></p>
 <p>Finally, we can execute the compute graph.  Once it is executed notice the newly added column in the dataset.  Also notice that we don't have just 4 rows anymore since we did not aggregate the child relationships!</p>

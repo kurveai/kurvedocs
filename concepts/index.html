@@ -276,6 +276,25 @@
   
 
       
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../tutorials/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Tutorials
+
+      </a>
+    </li>
+  
+
+      
     </ul>
   </div>
 </nav>
@@ -674,6 +693,28 @@
   
 
     
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorials/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Tutorials
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
   </ul>
 </nav>
                   </div>
@@ -773,52 +814,52 @@ or computing some function over a numerical column in a non-aggregated way.</p>
 <p>In plain english we're widening the table by adding new columns.  Let's say
 we have a table with 2 columns: <code>id INT</code> and <code>name INT</code>.  Kurve takes
 care of compiling the end to end SQL at runtime we can simply add the select
-and not think about the rest of the query:</p>
-<pre><code class="language-sql">select *, length(name) as name_length
-</code></pre>
-<p>At runtime this will compile into a full query like:</p>
-<pre><code class="language-sql">create some_stage_name as
-select *, length(name) as name_length
-from table
-</code></pre>
-<p>We added the <code>name_length</code> column which is derived from the <code>name</code> column, so now we
+and not think about the rest of the query:
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">length</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">name_length</span>
+</code></pre></div>
+At runtime this will compile into a full query like:
+<div class="highlight"><pre><span></span><code><span class="k">create</span><span class="w"> </span><span class="n">some_stage_name</span><span class="w"> </span><span class="k">as</span>
+<span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span><span class="w"> </span><span class="k">length</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">name_length</span>
+<span class="k">from</span><span class="w"> </span><span class="k">table</span>
+</code></pre></div>
+We added the <code>name_length</code> column which is derived from the <code>name</code> column, so now we
 have 3 columns instead of 2.</p>
 <h5 id="filters">filters</h5>
 <p>Filters are any filter applied to the node.  Since order of operation matters, they
 can also be combined with annotations.  They can be written in isolation without
-the rest of SQL grammar:</p>
-<pre><code class="language-sql">where lower(name) not like '%test%'
-</code></pre>
-<p>At runtime this will compile into a full query like:</p>
-<pre><code class="language-sql">select *
-from some_stage_name
-where lower(name) like '%test%'
-</code></pre>
+the rest of SQL grammar:
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%test%&#39;</span>
+</code></pre></div>
+At runtime this will compile into a full query like:
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span>
+<span class="k">from</span><span class="w"> </span><span class="n">some_stage_name</span>
+<span class="k">where</span><span class="w"> </span><span class="k">lower</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="w"> </span><span class="k">like</span><span class="w"> </span><span class="s1">&#39;%test%&#39;</span>
+</code></pre></div></p>
 <h5 id="reduce-aggregate">reduce / aggregate</h5>
 <p>Aggregations are any <code>group by</code> applied to the table prior
 to joining it to it's parent.  Kurve uses completely automated
 reduce operations powered by <a href="https://github.com/wesmadrigal/graphreduce">graphreduce</a>
 but also allows full customizability.</p>
 <p>As with filters and annotations, reduce operations can be written
-in isolation without the where clauses and annotations as follows:</p>
-<pre><code class="language-sql">select customer_id,
-count(*) as num_orders
-from 'orders.csv'
-group by customer_id
-</code></pre>
+in isolation without the where clauses and annotations as follows:
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span>
+<span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">num_orders</span>
+<span class="k">from</span><span class="w"> </span><span class="s1">&#39;orders.csv&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">customer_id</span>
+</code></pre></div></p>
 <h5 id="labels-target-variables">labels / target variables</h5>
 <p>Labels are the target variable for machine learning problems.
 Based on the parameterized cut date and the label period the label
 node will get filtered to compute the label.</p>
 <p>For a label period of 90 days and a cut date of Jan 1, 2025 we would
-get the following auto-generated SQL for the <code>orders.csv</code>:</p>
-<pre><code class="language-sql">select customer_id,
-count(*) as num_orders_label
-from 'orders.csv'
-where ts &gt; cut_date
-and ts &lt; cut_date + INTERVAL '90 day'
-group by customer_id
-</code></pre>
+get the following auto-generated SQL for the <code>orders.csv</code>:
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">customer_id</span><span class="p">,</span>
+<span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">num_orders_label</span>
+<span class="k">from</span><span class="w"> </span><span class="s1">&#39;orders.csv&#39;</span>
+<span class="k">where</span><span class="w"> </span><span class="n">ts</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="n">cut_date</span>
+<span class="k">and</span><span class="w"> </span><span class="n">ts</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">cut_date</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="nb">INTERVAL</span><span class="w"> </span><span class="s1">&#39;90 day&#39;</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">customer_id</span>
+</code></pre></div></p>
 <p>This tells us if a customer had an order in the next 90 days.</p>
 <h5 id="post-join-annotations-advanced">post-join annotations (advanced)</h5>
 <p>Same as annotations above but applied <i>after</i> the specified
