@@ -591,21 +591,22 @@
 <h1 id="end-to-end-examples">End to end examples</h1>
 <p>If you have not already signed up, go to <a href="https://demo.kurve.ai">https://demo.kurve.ai</a> and create an account.  It will be needed to follow along with these tutorials.</p>
 <h2 id="relbench">Relbench</h2>
-<p>In the following tutorials we'll be using the <a href="https://relbench.stanford.edu">relational deep learning benchmark</a>.  The following results are achieved with Kurve:</p>
+<p>In the following tutorials we'll be using the <a href="https://relbench.stanford.edu">relational deep learning benchmark</a>.  For the time being we're looking at a subset of the whole benchmark, specifically entity regression and entity classification tasks.  Thus far we have not benchmarked link prediction problems yet.  The following results were achieved:</p>
 <ul>
-<li>Kurve beats Kumo 9 out of 9 times.</li>
-<li>Kurve beats Kumo fine tuned 3 out of 9 times.</li>
-<li>Kurve beats an expert data scientist 6 out of 8 times.</li>
+<li>Kurve beats the data scientist 5 out of 8 times.</li>
+<li>Kurve beats RDL (relational deep learning) 5 out of 9 times.</li>
+<li>Kurve beats KumoRFM (in context) 9 out of 9 times.</li>
+<li>Kurve beats KumoRFM (fine tuned) 4 out of 9 times.</li>
 </ul>
-<p>This is impressive, given that a true 1:1 comparison between Kurve and Kumo fine tuned would be customizing the implementation within Kurve, but even Kurve out of the box is highly competitive with a customized/fine tuned implementation of this state of the art approach.</p>
+<p>Given that a true 1:1 comparison between Kurve and fine tuned models would require customized feature implementations it is impressive that Kurve's out of the box automated feature engineering across multiple tables beats the Data Scientist, RDL, Kumo, and Kumo fine tuned so often. Results for comparison from the <a href="https://kumo.ai/research/kumo_relational_foundation_model.pdf">KumoRFM paper</a>.</p>
 <table>
 <thead>
 <tr>
 <th>Problem</th>
 <th>Data Scientist</th>
 <th>RDL</th>
-<th>Kumo</th>
-<th>Kumo fine tuned</th>
+<th>Kumo (in context)</th>
+<th>Kumo (fine tuned)</th>
 <th>Kurve</th>
 <th>Metric</th>
 </tr>
@@ -617,7 +618,7 @@
 <td>90.2</td>
 <td>87.09</td>
 <td><strong>90.7</strong></td>
-<td>90.3</td>
+<td>90.0</td>
 <td>AUCROC</td>
 </tr>
 <tr>
@@ -706,6 +707,7 @@
 </ol>
 <h4 id="user-engagement"><a href="https://relbench.stanford.edu/datasets/rel-stack/#user-engagement">user-engagement</a></h4>
 <p>To solve the <code>user-engagement</code> problem we need to assign the <code>Users</code> table as the <b>parent node</b>.</p>
+<h2>Prepare and execute the compute graph</h2>
 <ol>
 <li>Assign the <code>Users</code> table as the <b>parent node</b> with a depth of 5.</li>
 <li>In the navbar click <b>Actions</b> then <b>Compute Graph</b>.</li>
@@ -722,13 +724,98 @@
 <li>Label operation: <b>bool</b></li>
 </ul>
 </li>
-<li>Execute the compute graph:<ul>
+<li>Now that you have the compute graph created and opened, we'll need to add one more node: <b>Votes</b> connected directly to <b>Users</b>.<ul>
+<li>Click <b>Actions</b> in navbar</li>
+<li>Click <b>Add Node</b> and select <b>Votes</b></li>
+<li>Click <b>Actions</b> in navbar</li>
+<li>Click <b>Add Edge</b> and add an edge between Users and the 2nd Votes in the list<ul>
+<li>parent node: <b>Users</b></li>
+<li>parent node field: <b>Id</b></li>
+<li>child node: <b>Votes</b> (remember the 2nd one listed)</li>
+<li>child node field: <b>UserId</b></li>
+<li>click <b>Add edge</b></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Now we need to customize a few things for the data filtering for this problem.<ul>
+<li>Click the <b>Users</b> node and click <b>Edit node</b><ul>
+<li>Remove the following fields: Reputation, Views, DownVotes, UpVotes</li>
+<li>Save changes</li>
+</ul>
+</li>
+<li>Click the <b>Comments</b> node and click <b>Edit node</b><ul>
+<li>Remove the following fields: Score</li>
+<li>Change the prefix to: <b>comm</b></li>
+<li>Add this SQL to <b>Label / target variable</b>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">UserId</span><span class="p">,</span>
+<span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">had_comment_label</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Comments</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">UserId</span>
+</code></pre></div></li>
+<li>Save changes</li>
+</ul>
+</li>
+<li>Click the <b>Posts</b> node and click <b>Edit node</b><ul>
+<li>Remove the following fields: Score, ViewCount, AnswerCount, CommentCount, FavoriteCount</li>
+<li>Change the prefix to: <b>post</b></li>
+<li>Save changes</li>
+</ul>
+</li>
+<li>Click the <b>Votes</b> node connected directly to Users and click <b>Edit node</b><ul>
+<li>Remove the following fields: BountyAmount</li>
+<li>Change the prefix to: <b>uvote</b></li>
+<li>Add this SQL to <b>Label / target variable</b>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="n">UserId</span><span class="p">,</span>
+<span class="k">count</span><span class="p">(</span><span class="o">*</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">had_vote_label</span>
+<span class="k">from</span><span class="w"> </span><span class="n">Votes</span>
+<span class="k">group</span><span class="w"> </span><span class="k">by</span><span class="w"> </span><span class="n">UserId</span>
+</code></pre></div></li>
+<li>save changes</li>
+</ul>
+</li>
+<li>Click the <b>Votes</b> node underneath Posts and click <b>Edit node</b><ul>
+<li>Remove the following fields: BountyAmount</li>
+<li>Change the prefix to: <b>subvote</b></li>
+<li>save changes</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Final customization for data prep.  This problem only considers "active" users who had engagement in the prior years so do the following.<ul>
+<li>Click the <b>Users</b> node and click <b>Edit node</b><ul>
+<li>Add this SQL to <b>Annotations / special selects</b>
+<div class="highlight"><pre><span></span><code><span class="k">select</span><span class="w"> </span><span class="o">*</span><span class="p">,</span>
+<span class="n">date_diff</span><span class="p">(</span><span class="s1">&#39;day&#39;</span><span class="p">,</span><span class="w"> </span><span class="n">CreationDate</span><span class="p">,</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="n">cut_date</span><span class="p">)</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="n">age_days</span>
+</code></pre></div></li>
+<li>Add this SQL to <b>Filters / wheres</b>
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="n">CreationDate</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="nb">date</span><span class="w"> </span><span class="n">cut_date</span>
+</code></pre></div></li>
+<li>Add this SQL to <b>Post-join annotate</li>
+<li>Add this SQL to <b>Post-join filters</b>
+<div class="highlight"><pre><span></span><code><span class="k">where</span><span class="w"> </span><span class="n">comm_CreationDate_max</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="k">or</span><span class="w"> </span><span class="n">post_CreationDate_max</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+<span class="k">or</span><span class="w"> </span><span class="n">uvote_CreationDate_max</span><span class="w"> </span><span class="k">is</span><span class="w"> </span><span class="k">not</span><span class="w"> </span><span class="k">null</span>
+</code></pre></div></li>
+</ul>
+</li>
+</ul>
+</li>
+<li>Last but not least, let's edit the compute graph details<ul>
+<li>Click <b>Actions</b> in the navbar</li>
+<li>Click <b>Edit compute graph</b></li>
+<li>Make sure <b>Automate date filters</b> is checked</li>
+<li>Save changes</li>
+</ul>
+</li>
+<li>Finally, Execute the compute graph:<ul>
 <li>Click <b>Actions</b> in the navbar</li>
 <li>Click <b>Execute compute graph</b></li>
 </ul>
 </li>
 <li>Navigate to the demo homepage and look under <b>My data sources</b> - there should be and S3 path.  Click it and you should see a table called <b>stackex_user_engagement_train</b>.</li>
 </ol>
+<h2>Load the training data into the notebook</h2>
 <p>This table <b>stackex_user_engagement_train</b> is the training dataset with all the point-in-time correctness, aggregation, and features solved for and aggregated up to <b>1/1/2020</b>.  The test / holdout set will be aggregated up to <b>1/1/2021</b>.  In Kurve this is as simple as changing the <b>cut date</b> in the UI.</p>
 <p>At this point let's open a Jupyter notebook with <a href="https://github.com/kurveai/conference_notebooks/blob/main/odsc_relbench_user_engage.ipynb">this notebook</a>.</p>
 <p>Once you have that loaded, load in the table by replacing the <b>train_path</b> in your notebook with the actual path you see in your UI for the table.</p>
@@ -774,7 +861,7 @@
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2025 01:40:01">November 19, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="November 19, 2025 03:22:54">November 19, 2025</span>
   </span>
 
     
